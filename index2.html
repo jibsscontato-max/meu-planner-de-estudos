@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Desempenho nos Estudos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+        }
+        .claymorphism {
+            border: 2px solid black;
+            box-shadow: 6px 6px 0px #000;
+        }
+         .btn-clay {
+            border: 2px solid black;
+            box-shadow: 3px 3px 0px #000;
+            transition: all 0.1s ease-in-out;
+        }
+        .btn-clay:active {
+            box-shadow: 0px 0px 0px #000;
+            transform: translate(3px, 3px);
+        }
+        .input-clay {
+             border: 2px solid black;
+        }
+    </style>
+</head>
+<body class="bg-violet-50 text-slate-800">
+
+    <!-- Container Principal -->
+    <div class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-5xl font-bold text-slate-900">Monitor de Desempenho</h1>
+            <p class="text-slate-600 mt-2">Acompanhe seu progresso nos estudos de forma visual e organizada.</p>
+        </header>
+
+        <!-- Análise Geral -->
+        <div class="mb-6 bg-white p-6 rounded-2xl claymorphism">
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
+                <h2 class="text-xl font-semibold">Análise de Desempenho</h2>
+                <button id="analyzeBtn" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">Analisar Pontos Fracos</button>
+            </div>
+            <div id="analysisResult" class="space-y-3">
+                <p class="text-slate-500 text-center py-2">Clique no botão para ver as matérias que precisam de mais atenção.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Coluna de Disciplinas -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl claymorphism">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Disciplinas</h2>
+                    <button id="addSubjectBtn" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay text-sm font-medium">Adicionar</button>
+                </div>
+                <div id="subjectsList" class="space-y-2">
+                    <!-- Disciplinas serão inseridas aqui -->
+                    <p class="text-slate-500 text-center py-4">Nenhuma disciplina cadastrada.</p>
+                </div>
+            </div>
+
+            <!-- Coluna de Assuntos e Desempenho -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Seção de Assuntos -->
+                <div id="topicsSection" class="bg-white p-6 rounded-2xl claymorphism hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Assuntos de <span id="selectedSubjectName" class="text-violet-600"></span></h2>
+                        <button id="addTopicBtn" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay text-sm font-medium">Adicionar</button>
+                    </div>
+                    <div id="topicsList" class="space-y-2">
+                         <!-- Assuntos serão inseridos aqui -->
+                         <p class="text-slate-500 text-center py-4">Selecione uma disciplina para ver os assuntos.</p>
+                    </div>
+                </div>
+
+                <!-- Seção de Desempenho -->
+                <div id="performanceSection" class="bg-white p-6 rounded-2xl claymorphism hidden">
+                    <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                        <h2 class="text-xl font-semibold">Desempenho em <span id="selectedTopicName" class="text-violet-600"></span></h2>
+                        <button id="addEntryBtn" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay text-sm font-medium">Adicionar Progresso</button>
+                    </div>
+                    <div class="mb-6">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-2">Histórico de Registros</h3>
+                        <div id="entriesList" class="space-y-3">
+                            <!-- Registros de progresso serão inseridos aqui -->
+                             <p class="text-slate-500 text-center py-4">Nenhum registro de progresso para este assunto.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Placeholder -->
+                <div id="welcomePlaceholder" class="bg-white p-10 rounded-2xl claymorphism text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                    <h3 class="mt-2 text-lg font-medium text-slate-800">Selecione uma disciplina para começar</h3>
+                    <p class="mt-1 text-sm text-slate-500">Ou adicione uma nova para organizar seus estudos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar Disciplina -->
+    <div id="subjectModal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden">
+        <div class="bg-violet-50 p-8 rounded-2xl claymorphism w-full max-w-md m-4">
+            <h3 class="text-2xl font-semibold mb-6">Nova Disciplina</h3>
+            <form id="subjectForm">
+                <label for="subjectName" class="block text-sm font-medium text-slate-700">Nome da Disciplina</label>
+                <input type="text" id="subjectName" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" required>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelSubject" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 btn-clay font-medium">Cancelar</button>
+                    <button type="submit" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay font-medium">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar Assunto -->
+    <div id="topicModal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden">
+        <div class="bg-violet-50 p-8 rounded-2xl claymorphism w-full max-w-md m-4">
+            <h3 class="text-2xl font-semibold mb-6">Novo Assunto</h3>
+            <form id="topicForm">
+                <label for="topicName" class="block text-sm font-medium text-slate-700">Nome do Assunto</label>
+                <input type="text" id="topicName" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" required>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelTopic" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 btn-clay font-medium">Cancelar</button>
+                    <button type="submit" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay font-medium">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar Progresso -->
+    <div id="entryModal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden">
+        <div class="bg-violet-50 p-8 rounded-2xl claymorphism w-full max-w-md m-4">
+            <h3 class="text-2xl font-semibold mb-6">Registrar Progresso</h3>
+            <form id="entryForm">
+                <div class="space-y-4">
+                    <div>
+                        <label for="entryDate" class="block text-sm font-medium text-slate-700">Data</label>
+                        <input type="date" id="entryDate" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="entryCorrect" class="block text-sm font-medium text-slate-700">Acertos</label>
+                            <input type="number" id="entryCorrect" min="0" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" required>
+                        </div>
+                        <div>
+                            <label for="entryIncorrect" class="block text-sm font-medium text-slate-700">Erros</label>
+                            <input type="number" id="entryIncorrect" min="0" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" required>
+                        </div>
+                    </div>
+                     <div>
+                        <label for="entryNotes" class="block text-sm font-medium text-slate-700">Anotações (Opcional)</label>
+                        <textarea id="entryNotes" rows="3" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" placeholder="Ex: Fiz 20 exercícios, errei as questões de logaritmo."></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelEntry" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 btn-clay font-medium">Cancelar</button>
+                    <button type="submit" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay font-medium">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirmModal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden">
+        <div class="bg-violet-50 p-8 rounded-2xl claymorphism w-full max-w-sm m-4 text-center">
+            <h3 id="confirmTitle" class="text-xl font-semibold mb-4">Confirmar Exclusão</h3>
+            <p id="confirmMessage" class="text-slate-600 mb-6">Você tem certeza?</p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirmCancel" class="bg-slate-200 text-slate-700 px-6 py-2 rounded-lg hover:bg-slate-300 btn-clay font-medium">Cancelar</button>
+                <button id="confirmDelete" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 btn-clay font-medium">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, addDoc, getDocs, onSnapshot, deleteDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Variáveis Globais e Configuração do Firebase ---
+        const firebaseConfig = {
+  apiKey: "AIzaSyB9eCE4KTnVzxAFVavTUQux28yv7yVKzT0",
+  authDomain: "gordinnn-dfa7e.firebaseapp.com",
+  projectId: "gordinnn-dfa7e",
+  storageBucket: "gordinnn-dfa7e.firebasestorage.app",
+  messagingSenderId: "788602864459",
+  appId: "1:788602864459:web:32b534a3459d08419ddece",
+  measurementId: "G-1S5ZQFQZT3"
+};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let userId = null;
+        let currentSubjectId = null;
+        let currentTopicId = null;
+        let performanceChart = null;
+        
+        // --- Gerenciamento de Estado da UI ---
+        const ui = {
+            subjectsList: document.getElementById('subjectsList'),
+            topicsList: document.getElementById('topicsList'),
+            entriesList: document.getElementById('entriesList'),
+            topicsSection: document.getElementById('topicsSection'),
+            performanceSection: document.getElementById('performanceSection'),
+            welcomePlaceholder: document.getElementById('welcomePlaceholder'),
+            selectedSubjectName: document.getElementById('selectedSubjectName'),
+            selectedTopicName: document.getElementById('selectedTopicName'),
+            analysisResult: document.getElementById('analysisResult'),
+            // Modals
+            subjectModal: document.getElementById('subjectModal'),
+            topicModal: document.getElementById('topicModal'),
+            entryModal: document.getElementById('entryModal'),
+            confirmModal: document.getElementById('confirmModal'),
+            // Forms
+            subjectForm: document.getElementById('subjectForm'),
+            topicForm: document.getElementById('topicForm'),
+            entryForm: document.getElementById('entryForm'),
+        };
+
+        const buttons = {
+            addSubjectBtn: document.getElementById('addSubjectBtn'),
+            addTopicBtn: document.getElementById('addTopicBtn'),
+            addEntryBtn: document.getElementById('addEntryBtn'),
+            cancelSubject: document.getElementById('cancelSubject'),
+            cancelTopic: document.getElementById('cancelTopic'),
+            cancelEntry: document.getElementById('cancelEntry'),
+            confirmCancel: document.getElementById('confirmCancel'),
+            confirmDelete: document.getElementById('confirmDelete'),
+            analyzeBtn: document.getElementById('analyzeBtn'),
+        };
+
+        // --- Autenticação ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                loadSubjects();
+            } else {
+                 try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Authentication Error:", error);
+                }
+            }
+        });
+        
+        // --- Funções de Renderização ---
+
+        function loadSubjects() {
+            if (!userId) return;
+            const subjectsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects');
+            
+            onSnapshot(query(subjectsCollection), (snapshot) => {
+                if (snapshot.empty) {
+                    ui.subjectsList.innerHTML = `<p class="text-slate-500 text-center py-4">Nenhuma disciplina cadastrada.</p>`;
+                    return;
+                }
+                
+                ui.subjectsList.innerHTML = '';
+                snapshot.docs.sort((a,b) => a.data().name.localeCompare(b.data().name)).forEach(doc => {
+                    const subject = { id: doc.id, ...doc.data() };
+                    const subjectEl = createListItem(subject.name, subject.id, 'subject');
+                    ui.subjectsList.appendChild(subjectEl);
+                });
+            });
+        }
+
+        function loadTopics(subjectId, subjectName) {
+            currentSubjectId = subjectId;
+            ui.selectedSubjectName.textContent = subjectName;
+            ui.topicsSection.classList.remove('hidden');
+            ui.welcomePlaceholder.classList.add('hidden');
+            ui.performanceSection.classList.add('hidden');
+            currentTopicId = null;
+
+            document.querySelectorAll('[data-type="subject"]').forEach(el => {
+                el.classList.toggle('bg-violet-100', el.dataset.id === subjectId);
+                el.classList.toggle('text-violet-700', el.dataset.id === subjectId);
+            });
+
+
+            const topicsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', subjectId, 'topics');
+            
+            onSnapshot(query(topicsCollection), (snapshot) => {
+                if (snapshot.empty) {
+                    ui.topicsList.innerHTML = `<p class="text-slate-500 text-center py-4">Nenhum assunto cadastrado.</p>`;
+                    return;
+                }
+                
+                ui.topicsList.innerHTML = '';
+                snapshot.docs.sort((a,b) => a.data().name.localeCompare(b.data().name)).forEach(doc => {
+                    const topic = { id: doc.id, ...doc.data() };
+                    const topicEl = createListItem(topic.name, topic.id, 'topic');
+                    topicEl.dataset.subjectId = subjectId;
+                    ui.topicsList.appendChild(topicEl);
+                });
+
+                if(currentTopicId) {
+                     document.querySelectorAll('[data-type="topic"]').forEach(el => {
+                        el.classList.toggle('bg-violet-100', el.dataset.id === currentTopicId);
+                        el.classList.toggle('text-violet-800', el.dataset.id === currentTopicId);
+                     });
+                }
+            });
+        }
+        
+        function loadEntries(subjectId, topicId, topicName) {
+            currentTopicId = topicId;
+            ui.selectedTopicName.textContent = topicName;
+            ui.performanceSection.classList.remove('hidden');
+
+            document.querySelectorAll('[data-type="topic"]').forEach(el => {
+                el.classList.toggle('bg-violet-100', el.dataset.id === topicId);
+                el.classList.toggle('text-violet-800', el.dataset.id === topicId);
+            });
+
+            const entriesCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', subjectId, 'topics', topicId, 'entries');
+            
+            onSnapshot(query(entriesCollection), (snapshot) => {
+                if (snapshot.empty) {
+                    ui.entriesList.innerHTML = `<p class="text-slate-500 text-center py-4">Nenhum registro de progresso para este assunto.</p>`;
+                    if (performanceChart) {
+                        performanceChart.destroy();
+                        performanceChart = null;
+                    }
+                    return;
+                }
+                
+                ui.entriesList.innerHTML = '';
+                const entries = [];
+                snapshot.forEach(doc => entries.push({ id: doc.id, ...doc.data() }));
+                
+                entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                entries.forEach(entry => {
+                    const entryEl = document.createElement('div');
+                    entryEl.className = 'p-4 bg-white rounded-lg border-2 border-black flex justify-between items-start';
+                    entryEl.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-slate-800">${new Date(entry.date).toLocaleDateString('pt-BR', {timeZone: 'UTC'})} - <span class="text-violet-600">Aproveitamento: ${entry.score.toFixed(1)}%</span></p>
+                            <p class="text-sm text-slate-500">Acertos: <span class="font-medium text-green-600">${entry.correct}</span> | Erros: <span class="font-medium text-red-600">${entry.incorrect}</span></p>
+                            <p class="text-sm text-slate-600 mt-1">${entry.notes || 'Nenhuma anotação.'}</p>
+                        </div>
+                        <button data-id="${entry.id}" data-type="entry" class="delete-btn text-slate-400 hover:text-red-600 p-1 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                        </button>
+                    `;
+                    entryEl.querySelector('.delete-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        confirmDeletion('entry', entry.id, {subjectId, topicId});
+                    });
+                    ui.entriesList.appendChild(entryEl);
+                });
+                renderChart(entries);
+            });
+        }
+        
+        function renderChart(entries) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            const labels = entries.map(e => new Date(e.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+            const data = entries.map(e => e.score);
+
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Aproveitamento (%)',
+                        data: data,
+                        borderColor: 'rgb(139, 92, 246)',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: 'rgb(139, 92, 246)',
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                             ticks: {
+                                callback: function(value) {
+                                    return value + '%'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Aproveitamento: ${context.parsed.y.toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createListItem(name, id, type) {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'flex justify-between items-center p-3 rounded-lg cursor-pointer hover:bg-violet-100 transition-colors';
+            itemEl.dataset.id = id;
+            itemEl.dataset.name = name;
+            itemEl.dataset.type = type;
+            itemEl.innerHTML = `
+                <span class="font-medium">${name}</span>
+                <button class="delete-btn text-slate-400 hover:text-red-600 p-1 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                </button>
+            `;
+            
+            itemEl.querySelector('.delete-btn').addEventListener('click', (e) => {
+                 e.stopPropagation();
+                 confirmDeletion(type, id, { subjectId: itemEl.dataset.subjectId });
+            });
+
+            itemEl.addEventListener('click', () => {
+                if (type === 'subject') loadTopics(id, name);
+                else if (type === 'topic') loadEntries(itemEl.dataset.subjectId, id, name);
+            });
+
+            return itemEl;
+        }
+
+        function toggleModal(modal, show) {
+            if (show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+        
+        // --- Handlers de Eventos ---
+
+        buttons.addSubjectBtn.onclick = () => { ui.subjectForm.reset(); toggleModal(ui.subjectModal, true); };
+        buttons.cancelSubject.onclick = () => toggleModal(ui.subjectModal, false);
+        buttons.addTopicBtn.onclick = () => { ui.topicForm.reset(); toggleModal(ui.topicModal, true); };
+        buttons.cancelTopic.onclick = () => toggleModal(ui.topicModal, false);
+        buttons.addEntryBtn.onclick = () => {
+            ui.entryForm.reset();
+            document.getElementById('entryDate').valueAsDate = new Date();
+            toggleModal(ui.entryModal, true);
+        };
+        buttons.cancelEntry.onclick = () => toggleModal(ui.entryModal, false);
+
+        ui.subjectForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const subjectName = document.getElementById('subjectName').value.trim();
+            if (!subjectName || !userId) return;
+            const subjectsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects');
+            await addDoc(subjectsCollection, { name: subjectName, createdAt: serverTimestamp() });
+            toggleModal(ui.subjectModal, false);
+        };
+        
+        ui.topicForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const topicName = document.getElementById('topicName').value.trim();
+            if (!topicName || !currentSubjectId || !userId) return;
+            const topicsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', currentSubjectId, 'topics');
+            await addDoc(topicsCollection, { name: topicName, createdAt: serverTimestamp() });
+            toggleModal(ui.topicModal, false);
+        };
+
+        ui.entryForm.onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentSubjectId || !currentTopicId || !userId) return;
+            
+            const correct = parseInt(document.getElementById('entryCorrect').value);
+            const incorrect = parseInt(document.getElementById('entryIncorrect').value);
+
+            if (isNaN(correct) || isNaN(incorrect)) return;
+            const total = correct + incorrect;
+            const score = total > 0 ? (correct / total) * 100 : 0;
+            
+            const entry = {
+                date: document.getElementById('entryDate').value,
+                correct: correct,
+                incorrect: incorrect,
+                score: score,
+                notes: document.getElementById('entryNotes').value.trim(),
+                createdAt: serverTimestamp()
+            };
+            
+            const entriesCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', currentSubjectId, 'topics', currentTopicId, 'entries');
+            await addDoc(entriesCollection, entry);
+            toggleModal(ui.entryModal, false);
+        };
+        
+        // --- Lógica de Análise e Exclusão ---
+        buttons.analyzeBtn.onclick = analyzePerformance;
+
+        async function analyzePerformance() {
+            if (!userId) return;
+
+            ui.analysisResult.innerHTML = `<p class="text-slate-500 text-center py-2">Analisando dados...</p>`;
+            buttons.analyzeBtn.disabled = true;
+
+            const subjectPerformances = [];
+
+            try {
+                const subjectsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects');
+                const subjectsSnapshot = await getDocs(subjectsCollection);
+
+                for (const subjectDoc of subjectsSnapshot.docs) {
+                    const subjectData = { id: subjectDoc.id, name: subjectDoc.data().name, totalScore: 0, entryCount: 0, topics: [] };
+                    const topicsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', subjectDoc.id, 'topics');
+                    const topicsSnapshot = await getDocs(topicsCollection);
+
+                    for (const topicDoc of topicsSnapshot.docs) {
+                        const topicData = { id: topicDoc.id, name: topicDoc.data().name, totalScore: 0, entryCount: 0 };
+                        const entriesCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', subjectDoc.id, 'topics', topicDoc.id, 'entries');
+                        const entriesSnapshot = await getDocs(entriesCollection);
+                        
+                        entriesSnapshot.forEach(entryDoc => {
+                            const score = entryDoc.data().score || 0;
+                            topicData.totalScore += score;
+                            topicData.entryCount++;
+                            subjectData.totalScore += score;
+                            subjectData.entryCount++;
+                        });
+
+                        if (topicData.entryCount > 0) {
+                            topicData.average = topicData.totalScore / topicData.entryCount;
+                            subjectData.topics.push(topicData);
+                        }
+                    }
+
+                    if (subjectData.entryCount > 0) {
+                        subjectData.average = subjectData.totalScore / subjectData.entryCount;
+                        subjectPerformances.push(subjectData);
+                    }
+                }
+                renderAnalysis(subjectPerformances);
+            } catch (error) {
+                console.error("Error analyzing performance:", error);
+                ui.analysisResult.innerHTML = `<p class="text-red-500 text-center py-2">Ocorreu um erro ao analisar os dados.</p>`;
+            } finally {
+                buttons.analyzeBtn.disabled = false;
+            }
+        }
+
+        function renderAnalysis(performanceData) {
+            if (performanceData.length === 0) {
+                ui.analysisResult.innerHTML = `<p class="text-slate-500 text-center py-2">Não há dados suficientes para uma análise. Adicione alguns registros de progresso primeiro.</p>`;
+                return;
+            }
+
+            performanceData.sort((a, b) => a.average - b.average);
+            ui.analysisResult.innerHTML = `<h3 class="font-semibold text-slate-800 mb-2">Matérias para Focar (Pior Desempenho Primeiro):</h3>`;
+            const list = document.createElement('ul');
+            list.className = 'space-y-2';
+
+            performanceData.forEach(subject => {
+                const avg = subject.average;
+                const colorClass = avg < 50 ? 'text-red-600' : avg < 75 ? 'text-yellow-600' : 'text-green-600';
+                const subjectItem = document.createElement('li');
+                subjectItem.className = 'p-3 bg-violet-50 rounded-lg border-2 border-black';
+                subjectItem.innerHTML = `<div class="flex justify-between items-center"><span class="font-bold">${subject.name}</span><span class="font-semibold ${colorClass}">Média: ${avg.toFixed(1)}%</span></div>`;
+                
+                subject.topics.sort((a,b) => a.average - b.average);
+                if (subject.topics.length > 0) {
+                    const topicsList = document.createElement('ul');
+                    topicsList.className = 'mt-2 pl-4 border-l-2 border-slate-400 space-y-1';
+                    subject.topics.forEach(topic => {
+                        const topicAvg = topic.average;
+                        const topicColorClass = topicAvg < 50 ? 'text-red-500' : topicAvg < 75 ? 'text-yellow-500' : 'text-green-500';
+                        const topicItem = document.createElement('li');
+                        topicItem.className = 'text-sm flex justify-between items-center';
+                        topicItem.innerHTML = `<span class="text-slate-600">${topic.name}</span><span class="font-medium ${topicColorClass}">${topicAvg.toFixed(1)}%</span>`;
+                        topicsList.appendChild(topicItem);
+                    });
+                    subjectItem.appendChild(topicsList);
+                }
+                list.appendChild(subjectItem);
+            });
+            ui.analysisResult.appendChild(list);
+        }
+        
+        function confirmDeletion(type, id, context = {}) {
+            const title = document.getElementById('confirmTitle');
+            const message = document.getElementById('confirmMessage');
+            
+            if (type === 'subject') {
+                title.textContent = 'Excluir Disciplina?';
+                message.textContent = 'Isso excluirá todos os assuntos e registros de progresso associados. Esta ação não pode ser desfeita.';
+            } else if (type === 'topic') {
+                title.textContent = 'Excluir Assunto?';
+                message.textContent = 'Isso excluirá todos os registros de progresso associados. Esta ação não pode ser desfeita.';
+            } else {
+                title.textContent = 'Excluir Registro?';
+                message.textContent = 'Tem certeza que deseja excluir este registro de progresso?';
+            }
+
+            toggleModal(ui.confirmModal, true);
+
+            buttons.confirmCancel.onclick = () => toggleModal(ui.confirmModal, false);
+
+            buttons.confirmDelete.onclick = () => {
+                deleteItem(type, id, context);
+                toggleModal(ui.confirmModal, false);
+            };
+        }
+        
+        async function deleteItem(type, id, context) {
+            if (!userId) return;
+            try {
+                if (type === 'subject') {
+                    const subjectRef = doc(db, 'artifacts', appId, 'users', userId, 'subjects', id);
+                    const topicsSnapshot = await getDocs(collection(subjectRef, 'topics'));
+                    for (const topicDoc of topicsSnapshot.docs) {
+                        const entriesSnapshot = await getDocs(collection(topicDoc.ref, 'entries'));
+                        for (const entryDoc of entriesSnapshot.docs) {
+                           await deleteDoc(entryDoc.ref);
+                        }
+                        await deleteDoc(topicDoc.ref);
+                    }
+                    await deleteDoc(subjectRef);
+                    if (currentSubjectId === id) {
+                        ui.topicsSection.classList.add('hidden');
+                        ui.performanceSection.classList.add('hidden');
+                        ui.welcomePlaceholder.classList.remove('hidden');
+                        currentSubjectId = null;
+                        currentTopicId = null;
+                    }
+
+                } else if (type === 'topic') {
+                    const topicRef = doc(db, 'artifacts', appId, 'users', userId, 'subjects', context.subjectId, 'topics', id);
+                    const entriesSnapshot = await getDocs(collection(topicRef, 'entries'));
+                    for (const entryDoc of entriesSnapshot.docs) {
+                        await deleteDoc(entryDoc.ref);
+                    }
+                    await deleteDoc(topicRef);
+                     if(currentTopicId === id) {
+                        ui.performanceSection.classList.add('hidden');
+                        currentTopicId = null;
+                     }
+
+                } else if (type === 'entry') {
+                    const entryRef = doc(db, 'artifacts', appId, 'users', userId, 'subjects', context.subjectId, 'topics', context.topicId, 'entries', id);
+                    await deleteDoc(entryRef);
+                }
+            } catch (error) {
+                console.error("Error deleting item:", error);
+            }
+        }
+    </script>
+    <a href="study-planner.html" style="display: block; text-align: left; font-size: 30px; text-decoration: none;" title="Voltar para o planejador de estudos">
+        &larr;
+    </a>
+
+</body>
+</html>
+</body>
+</html>
+
