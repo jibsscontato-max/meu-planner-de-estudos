@@ -1,1004 +1,685 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planejador de Estudos "Diagram"</title>
+    <title>Monitor de Desempenho nos Estudos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-    <!-- Biblioteca para Arrastar e Soltar -->
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* --- Estética "Diagram" --- */
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F3F1FF; /* Roxo bem claro */
-            color: #1a1a1a;
+            font-family: 'Poppins', sans-serif;
         }
-
-        .main-container {
-            background-color: transparent;
-            width: 100%;
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
         }
-
-        .title-container {
-            position: relative;
+        .claymorphism {
+            border: 2px solid black;
+            box-shadow: 6px 6px 0px #000;
         }
-
-        .sparkle {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            background-image: url("data:image/svg+xml,%3Csvg width='48' height='48' viewBox='0 0 48' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M24 0L27.1633 11.3137L38.4771 14.4771L27.1633 17.6406L24 29L20.8367 17.6406L9.52286 14.4771L20.8367 11.3137L24 0Z' fill='%23C5ADFF'/%3E%3Cpath d='M38 31L40.1213 36.8787L46 39L40.1213 41.1213L38 47L35.8787 41.1213L30 39L35.8787 36.8787L38 31Z' fill='%23C5ADFF'/%3E%3Cpath d='M10 29L11.5359 33.4641L16 35L11.5359 36.5359L10 41L8.4641 36.5359L4 35L8.4641 33.4641L10 29Z' fill='%23C5ADFF'/%3E%3C/svg%3E");
-            background-size: contain;
-            background-repeat: no-repeat;
+         .btn-clay {
+            border: 2px solid black;
+            box-shadow: 3px 3px 0px #000;
+            transition: all 0.1s ease-in-out;
         }
-
-        .sparkle-tl { top: -20px; left: -30px; transform: rotate(-15deg); }
-        .sparkle-br { bottom: -10px; right: -20px; transform: rotate(15deg); width: 30px; height: 30px;}
-
-        h1 { 
-            color: #1a1a1a;
-            font-weight: 900;
-            font-size: 3.5rem;
-            line-height: 1.1;
+        .btn-clay:active {
+            box-shadow: 0px 0px 0px #000;
+            transform: translate(3px, 3px);
         }
-        h2 { 
-            color: #1a1a1a; 
-            font-weight: 700;
-            border-bottom: 2px solid #000;
-            padding-bottom: 8px;
-            margin-bottom: 16px;
-        }
-
-        .retro-border {
-            border: 2px solid #000;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 0 #000;
-            transition: all 0.2s ease-in-out;
-        }
-        
-        .custom-button {
-             background-color: #C5ADFF; color: #1a1a1a;
-             font-weight: 600;
-             border: 2px solid #000;
-             border-radius: 0.5rem;
-             box-shadow: 0 4px 0 #000;
-             transition: all 0.2s ease-in-out;
-             transform: translateY(0);
-        }
-        .custom-button:hover { 
-            background-color: #A582E8;
-            box-shadow: 0 2px 0 #000;
-            transform: translateY(2px);
-        }
-         .custom-button:disabled {
-            background-color: #E6E0FF;
-            color: #9c9c9c;
-            cursor: not-allowed;
-            box-shadow: 0 4px 0 #a9a9a9;
-        }
-
-        input[type="text"], input[type="date"], input[type="time"], input[type="number"], select {
-            background-color: #fff;
-            border: 2px solid #000;
-            border-radius: 0.5rem;
-            padding: 10px;
-            font-weight: 500;
-            width: 100%;
-        }
-        input:focus, select:focus {
-            border-color: #7F5AF0;
-            outline: none;
-        }
-        
-        .loader {
-            border: 4px solid #E6E0FF;
-            border-top: 4px solid #7F5AF0;
-            border-radius: 50%; width: 40px; height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .modal { transition: opacity 0.25s ease; }
-        .modal-active { overflow: hidden; }
-        .modal-content { 
-            background-color: #F3F1FF;
-            border: 2px solid #000;
-        }
-        .badge {
-            padding: 4px 10px;
-            border-radius: 0.5rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-left: 8px;
-            border: 2px solid #000;
-        }
-        .badge-autodidata { background-color: #DCD2FF; color: #1a1a1a; }
-        .badge-cursinho { background-color: #C5ADFF; color: #1a1a1a; }
-        .handle { cursor: grab; }
-        .handle:active { cursor: grabbing; }
-
-        /* Estilos para o Gerenciador de Ciclo */
-        .cycle-box {
-            min-height: 150px;
-            border: 2px dashed #a9a9a9;
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-        }
-        .cycle-item {
-            cursor: grab;
-            background-color: white;
-            padding: 8px 12px;
-            margin-bottom: 4px;
-            border-radius: 0.25rem;
-            border: 2px solid #000;
+        .input-clay {
+             border: 2px solid black;
         }
     </style>
-    
-    <script>
-        // --- FUNÇÕES GLOBAIS PARA A API DO GOOGLE ---
-        function gapiLoaded() { gapi.load('client', window.initializeGapiClient); }
-        function gisLoaded() { window.initializeGisClient(); }
-    </script>
-    
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
-    
-    <script>
-        // --- IMPORTANTE: SUBSTITUA PELAS SUAS CREDENCIAIS ---
-        // --- Planejador de Estudos Focado ---
-        // Desenvolvido por: [jose inacio]
-        const API_KEY = 'AIzaSyAXP35E7TxXDj3-823DbDFs6DB8rnALB1c'; 
-const CLIENT_ID = '912420647549-4jc0v3robvfvbpmmpnqln15289tm0dmg.apps.googleusercontent.com';
+</head>
+<body class="bg-violet-50 text-slate-800">
 
-        // --- Configurações da API ---
-        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
-        const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+    <!-- Container Principal -->
+    <div class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-5xl font-bold text-slate-900">Monitor de Desempenho</h1>
+            <p class="text-slate-600 mt-2">Acompanhe seu progresso nos estudos de forma visual e organizada.</p>
+        </header>
 
-        let tokenClient;
-        let gapiInited = false;
-        let gisInited = false;
-        let subjects = [];
-        let generatedEvents = [];
-        let sortableInstance = null;
-        let pendingReviews = [];
-        let activeReviewFilter = 'week';
-        let cycleSubjectIds = []; // Armazena os IDs das matérias no ciclo
+        <!-- Análise Geral -->
+        <div class="mb-6 bg-white p-6 rounded-2xl claymorphism">
+            <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
+                <h2 class="text-xl font-semibold">Análise de Desempenho</h2>
+                <button id="analyzeBtn" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">Analisar Pontos Fracos</button>
+            </div>
+            <div id="analysisResult" class="space-y-3">
+                <p class="text-slate-500 text-center py-2">Clique no botão para ver as matérias que precisam de mais atenção.</p>
+            </div>
+        </div>
 
-        const weekdays = [
-            { name: 'Domingo', value: 0 }, { name: 'Segunda', value: 1 }, { name: 'Terça', value: 2 },
-            { name: 'Quarta', value: 3 }, { name: 'Quinta', value: 4 }, { name: 'Sexta', value: 5 }, { name: 'Sábado', value: 6 }
-        ];
-        const googleCalendarColors = [
-            { id: '1', name: 'Azul', hex: '#7986cb' }, { id: '2', name: 'Verde', hex: '#33b679' }, { id: '3', name: 'Roxo', hex: '#8e24aa' },
-            { id: '4', name: 'Vermelho', hex: '#e67c73' }, { id: '5', name: 'Amarelo', hex: '#f6c026' }, { id: '6', name: 'Laranja', hex: '#f5511d' },
-            { id: '7', name: 'Turquesa', hex: '#039be5' }, { id: '8', name: 'Cinza', hex: '#616161' }, { id: '9', name: 'Azul Escuro', hex: '#3f51b5' },
-            { id: '10', name: 'Verde Escuro', hex: '#0b8043' }, { id: '11', name: 'Vermelho Escuro', hex: '#d60000' }
-        ];
-
-        // --- Funções da API do Google ---
-        window.initializeGapiClient = async function() {
-            try {
-                await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
-                gapiInited = true; maybeEnableButtons();
-            } catch (err) { handleGapiError(err); }
-        }
-
-        window.initializeGisClient = function() {
-            try {
-                tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' });
-                gisInited = true; maybeEnableButtons();
-            } catch (err) { handleGisError(err); }
-        }
-
-        function maybeEnableButtons() { if (gapiInited && gisInited) document.getElementById('authorize_button').style.display = 'block'; }
-        
-        function handleAuthClick() {
-            if (!tokenClient) return;
-            tokenClient.callback = async (resp) => {
-                if (resp.error !== undefined) throw resp;
-                gapi.client.setToken(resp);
-                updateSigninStatus(true);
-                document.getElementById('status-message').textContent = 'Autorizado com sucesso!';
-            };
-            if (gapi.client.getToken() === null) tokenClient.requestAccessToken({ prompt: 'consent' });
-            else tokenClient.requestAccessToken({ prompt: '' });
-        }
-
-        function handleSignoutClick() {
-            const token = gapi.client.getToken();
-            if (token !== null) {
-                google.accounts.oauth2.revoke(token.access_token, () => {
-                    gapi.client.setToken('');
-                    updateSigninStatus(false);
-                    document.getElementById('status-message').textContent = '';
-                });
-            }
-        }
-
-        function updateSigninStatus(isSignedIn) {
-            document.getElementById('authorize_button').style.display = isSignedIn ? 'none' : 'block';
-            document.getElementById('signout_button').style.display = isSignedIn ? 'block' : 'none';
-            document.getElementById('clear_events_button').style.display = isSignedIn ? 'block' : 'none';
-            document.getElementById('generate_schedule_button').disabled = !isSignedIn;
-            document.getElementById('fetch-reviews-button').disabled = !isSignedIn;
-        }
-        
-        // --- Gestão de Matérias ---
-        function handleStudyTypeChange() {
-            const typeSelect = document.getElementById('study-type-select');
-            const durationInputContainer = document.getElementById('autodidata-duration-container');
-            if (durationInputContainer) {
-                durationInputContainer.style.display = typeSelect.value === 'Autodidata' ? 'block' : 'none';
-            }
-        }
-
-        function addSubject() {
-            const subjectInput = document.getElementById('subject-input');
-            const topicInput = document.getElementById('topic-input');
-            const colorSelect = document.getElementById('color-select');
-            const typeSelect = document.getElementById('study-type-select');
-            const durationInput = document.getElementById('subject-duration-auto');
-            const subjectName = subjectInput.value.trim();
-            const topicName = topicInput.value.trim();
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            if (subjectName) {
-                const newSubject = {
-                    id: Date.now(),
-                    name: subjectName,
-                    topic: topicName,
-                    colorId: colorSelect.value,
-                    type: typeSelect.value,
-                    duration: typeSelect.value === 'Autodidata' ? parseInt(durationInput.value) || 50 : null
-                };
-                subjects.push(newSubject);
-                saveSubjects();
-                renderSubjects();
-                renderCycleManager(); // Atualiza o gerenciador de ciclo
-                subjectInput.value = '';
-                topicInput.value = '';
-                durationInput.value = '50';
-                subjectInput.focus();
-            }
-        }
-
-        function removeSubject(id) {
-            subjects = subjects.filter(s => s.id !== id);
-            cycleSubjectIds = cycleSubjectIds.filter(cycleId => cycleId !== id); // Remove do ciclo também
-            saveSubjects();
-            saveCycleSubjects();
-            renderSubjects();
-            renderCycleManager();
-        }
-
-        function renderSubjects() {
-            const subjectsList = document.getElementById('subjects-list');
-             if (sortableInstance) {
-                sortableInstance.destroy();
-            }
-            subjectsList.innerHTML = subjects.map(subject => {
-                const color = googleCalendarColors.find(c => c.id === subject.colorId) || { hex: '#616161' };
-                const typeClass = subject.type === 'Autodidata' ? 'badge-autodidata' : 'badge-cursinho';
-                const topicDisplay = subject.topic ? `<span class="text-gray-500 italic ml-2">- ${subject.topic}</span>` : '';
-                const durationDisplay = subject.type === 'Autodidata' && subject.duration ? `<span class="text-xs text-gray-500 ml-2">(${subject.duration} min)</span>` : '';
-                return `
-                <div class="flex justify-between items-center bg-white/70 p-2 rounded-lg" data-id="${subject.id}">
-                    <div class="flex items-center overflow-hidden">
-                        <svg class="w-5 h-5 mr-2 text-gray-400 handle" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                        <span class="w-4 h-4 rounded-full mr-3 flex-shrink-0" style="background-color: ${color.hex};"></span>
-                        <div class="truncate">
-                            <span class="font-semibold">${subject.name}</span>
-                            ${durationDisplay}
-                            ${topicDisplay}
-                        </div>
-                        <span class="badge ${typeClass} flex-shrink-0">${subject.type}</span>
-                    </div>
-                    <button onclick="removeSubject(${subject.id})" class="text-red-400 hover:text-red-600 font-bold text-xl px-2">&times;</button>
-                </div>`;
-            }).join('');
-
-            sortableInstance = Sortable.create(subjectsList, {
-                group: 'subjects',
-                handle: '.handle',
-                animation: 150,
-                onEnd: function (evt) {
-                    const newOrderIds = Array.from(subjectsList.children).map(item => parseInt(item.dataset.id));
-                    subjects.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
-                    saveSubjects();
-                },
-            });
-        }
-
-        function saveSubjects() { localStorage.setItem('studyPlannerSubjects', JSON.stringify(subjects)); }
-        function loadSubjects() {
-            const savedSubjects = localStorage.getItem('studyPlannerSubjects');
-            if (savedSubjects) { subjects = JSON.parse(savedSubjects); }
-            renderSubjects();
-        }
-
-        // --- Gerenciador de Ciclo de Estudos ---
-        function renderCycleManager() {
-            const availableList = document.getElementById('cycle-available-list');
-            const inCycleList = document.getElementById('cycle-in-cycle-list');
-
-            const autodidataSubjects = subjects.filter(s => s.type === 'Autodidata');
-            const availableSubjects = autodidataSubjects.filter(s => !cycleSubjectIds.includes(s.id));
-            const inCycleSubjects = cycleSubjectIds.map(id => subjects.find(s => s.id === id)).filter(Boolean); // Garante a ordem
-
-            availableList.innerHTML = availableSubjects.map(s => `
-                <div class="cycle-item" data-id="${s.id}">${s.name}${s.topic ? ' - ' + s.topic : ''}</div>
-            `).join('');
-
-            inCycleList.innerHTML = inCycleSubjects.map(s => `
-                <div class="cycle-item" data-id="${s.id}">${s.name}${s.topic ? ' - ' + s.topic : ''}</div>
-            `).join('');
-            
-            // Inicializa ou reinicializa o Sortable.js
-            ['cycle-available-list', 'cycle-in-cycle-list'].forEach(id => {
-                if (Sortable.get(document.getElementById(id))) {
-                    Sortable.get(document.getElementById(id)).destroy();
-                }
-                Sortable.create(document.getElementById(id), {
-                    group: 'cycle',
-                    animation: 150,
-                    onEnd: function() {
-                        cycleSubjectIds = Array.from(inCycleList.children).map(item => parseInt(item.dataset.id));
-                        saveCycleSubjects();
-                    }
-                });
-            });
-        }
-
-        function saveCycleSubjects() {
-            localStorage.setItem('studyPlannerCycle', JSON.stringify(cycleSubjectIds));
-        }
-        function loadCycleSubjects() {
-            const saved = localStorage.getItem('studyPlannerCycle');
-            if (saved) { cycleSubjectIds = JSON.parse(saved); }
-            renderCycleManager();
-        }
-
-        // --- Geração do Cronograma ---
-        async function generateAndPreviewSchedule() {
-            const statusMessage = document.getElementById('status-message');
-            statusMessage.textContent = ''; // Limpa mensagens de erro anteriores
-
-            const startDateStr = document.getElementById('start-date').value;
-            const endDateStr = document.getElementById('end-date').value;
-            
-            if (!startDateStr || !endDateStr) {
-                statusMessage.textContent = 'ERRO: Preencha as datas de início e fim.'; return;
-            }
-            
-            const [startYear, startMonth, startDay] = startDateStr.split('-').map(Number);
-            const startDate = new Date(Date.UTC(startYear, startMonth - 1, startDay));
-
-            const [endYear, endMonth, endDay] = endDateStr.split('-').map(Number);
-            const endDate = new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59));
-
-            if (endDate < startDate) {
-                statusMessage.textContent = 'ERRO: A data de fim não pode ser anterior à data de início.'; return;
-            }
-
-            const autodidataEnabled = document.getElementById('enable-autodidata').checked;
-            const cursinhoEnabled = document.getElementById('enable-cursinho').checked;
-            
-            if (autodidataEnabled && cycleSubjectIds.length === 0) {
-                 statusMessage.textContent = 'ERRO: Adicione matérias ao seu ciclo de estudos antes de gerar o cronograma.'; return;
-            }
-
-            let isAnyDaySelected = false;
-            if (autodidataEnabled) {
-                document.querySelectorAll('#weekdays-autodidata input[type="checkbox"]:checked').forEach(() => isAnyDaySelected = true);
-            }
-             if (cursinhoEnabled && subjects.filter(s => s.type === 'Cursinho').length > 0) {
-                document.querySelectorAll('#weekdays-cursinho input[type="checkbox"]:checked').forEach(() => isAnyDaySelected = true);
-            }
-            if (!(autodidataEnabled || cursinhoEnabled) || !isAnyDaySelected) {
-                 statusMessage.textContent = 'ERRO: Selecione um modo de estudo e pelo menos um dia da semana.'; return;
-            }
-
-            document.getElementById('loader').style.display = 'block';
-            statusMessage.textContent = 'A verificar o seu calendário e a gerar o cronograma...';
-
-            const allExistingEvents = await getExistingEvents(startDateStr, endDateStr);
-            const existingEventsForConflict = allExistingEvents.map(e => ({ start: new Date(e.start.dateTime || e.start.date), end: new Date(e.end.dateTime || e.end.date) }));
-            generatedEvents = [];
-            let conflictsSkipped = 0;
-            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const autodidataConfig = { 
-                enabled: autodidataEnabled, 
-                startTime: document.getElementById('start-time-auto').value, 
-                endTime: document.getElementById('end-time-auto').value,
-                once: document.getElementById('schedule-once-auto').checked
-            };
-            const cursinhoConfig = { enabled: cursinhoEnabled, slots: [{ startTime: document.getElementById('start-time-cursinho1').value, endTime: document.getElementById('end-time-cursinho1').value }, { startTime: document.getElementById('start-time-cursinho2').value, endTime: document.getElementById('end-time-cursinho2').value }] };
-            const reviewConfigs = {
-                'Autodidata': { enabled: document.getElementById('enable-reviews-auto').checked, intervals: document.getElementById('review-intervals-auto').value.split(',').map(s => parseInt(s.trim())).filter(Number.isInteger), duration: parseInt(document.getElementById('review-duration-auto').value), colorId: document.getElementById('review-color-select-auto').value },
-                'Cursinho': { enabled: document.getElementById('enable-reviews-cursinho').checked, intervals: document.getElementById('review-intervals-cursinho').value.split(',').map(s => parseInt(s.trim())).filter(Number.isInteger), duration: parseInt(document.getElementById('review-duration-cursinho').value), colorId: document.getElementById('review-color-select-cursinho').value }
-            };
-            
-            let loopDate = new Date(startDate);
-            
-            // Usa as matérias do ciclo para Autodidata
-            const autodidataSubjects = cycleSubjectIds.map(id => subjects.find(s => s.id === id)).filter(Boolean);
-            const cursinhoSubjects = subjects.filter(s => s.type === 'Cursinho');
-            
-            while (loopDate <= endDate) {
-                const dayOfWeek = loopDate.getUTCDay();
-                const year = loopDate.getUTCFullYear();
-                const month = String(loopDate.getUTCMonth() + 1).padStart(2, '0');
-                const day = String(loopDate.getUTCDate()).padStart(2, '0');
-                const dateString = `${year}-${month}-${day}`;
-                
-                let cursinhoDayIndex = 0;
-                
-                if (autodidataConfig.enabled && autodidataSubjects.length > 0 && document.getElementById(`day-autodidata-${dayOfWeek}`).checked) {
-                    let currentSessionStart = new Date(`${dateString}T${autodidataConfig.startTime}`);
-                    
-                    if (autodidataConfig.once) {
-                        for (const subject of autodidataSubjects) {
-                            const sessionDuration = subject.duration || 50;
-                            const sessionEnd = new Date(currentSessionStart.getTime() + sessionDuration * 60000);
-                            if (existingEventsForConflict.some(e => (currentSessionStart < e.end && sessionEnd > e.start))) {
-                                conflictsSkipped++;
-                            } else {
-                                createEventAndReviews('Autodidata', subject, currentSessionStart, sessionEnd, timeZone, reviewConfigs['Autodidata']);
-                            }
-                            currentSessionStart = sessionEnd;
-                        }
-                    } else {
-                        let autodidataIndex = 0;
-                        const dayEndTime = new Date(`${dateString}T${autodidataConfig.endTime}`);
-                        while (currentSessionStart < dayEndTime) {
-                            const subject = autodidataSubjects[autodidataIndex % autodidataSubjects.length];
-                            const sessionDuration = subject.duration || 50;
-                            const sessionEnd = new Date(currentSessionStart.getTime() + sessionDuration * 60000);
-
-                            if (sessionEnd > dayEndTime) break;
-                            if (existingEventsForConflict.some(e => (currentSessionStart < e.end && sessionEnd > e.start))) {
-                                conflictsSkipped++;
-                            } else {
-                                createEventAndReviews('Autodidata', subject, currentSessionStart, sessionEnd, timeZone, reviewConfigs['Autodidata']);
-                                autodidataIndex++;
-                            }
-                            currentSessionStart = sessionEnd;
-                        }
-                    }
-                }
-
-                if (cursinhoConfig.enabled && cursinhoSubjects.length > 0 && document.getElementById(`day-cursinho-${dayOfWeek}`).checked) {
-                    for (const slot of cursinhoConfig.slots) {
-                        if (cursinhoDayIndex >= cursinhoSubjects.length) continue; 
-                        const subject = cursinhoSubjects[cursinhoDayIndex];
-                        const sessionStart = new Date(`${dateString}T${slot.startTime}`);
-                        const sessionEnd = new Date(`${dateString}T${slot.endTime}`);
-                        if (sessionStart >= sessionEnd) continue;
-                        if (existingEventsForConflict.some(e => (sessionStart < e.end && sessionEnd > e.start))) {
-                            conflictsSkipped++;
-                        } else {
-                            createEventAndReviews('Cursinho', subject, sessionStart, sessionEnd, timeZone, reviewConfigs['Cursinho']);
-                            cursinhoDayIndex++;
-                        }
-                    }
-                }
-                loopDate.setUTCDate(loopDate.getUTCDate() + 1);
-            }
-
-            document.getElementById('loader').style.display = 'none';
-            if (generatedEvents.length === 0) {
-                 statusMessage.textContent = `Nenhum horário vago encontrado para agendar. ${conflictsSkipped} conflito(s) evitado(s).`;
-            } else {
-                statusMessage.textContent = `Cronograma gerado! ${conflictsSkipped} conflito(s) evitado(s).`;
-                showPreviewModal();
-            }
-        }
-
-        function createEventAndReviews(type, subject, start, end, timeZone, reviewConfig) {
-            const emoji = type === 'Autodidata' ? '👨‍💻' : '🏫';
-            const summaryTopic = subject.topic ? ` - ${subject.topic}` : '';
-            const eventSummary = `${emoji} ${type}: ${subject.name}${summaryTopic}`;
-            
-            const reminders = { 'useDefault': false, 'overrides': [{ 'method': 'popup', 'minutes': 1 }] };
-
-            generatedEvents.push({ summary: eventSummary, start: { dateTime: start.toISOString(), timeZone }, end: { dateTime: end.toISOString(), timeZone }, colorId: subject.colorId, reminders: reminders });
-
-            if (reviewConfig.enabled && reviewConfig.intervals.length > 0) {
-                reviewConfig.intervals.forEach(day => {
-                    const reviewDate = new Date(start);
-                    reviewDate.setDate(reviewDate.getDate() + day);
-                    const reviewEnd = new Date(reviewDate.getTime() + reviewConfig.duration * 60000);
-                    generatedEvents.push({ summary: `✅ Revisão: ${subject.name}${summaryTopic} (D+${day})`, start: { dateTime: reviewDate.toISOString(), timeZone }, end: { dateTime: reviewEnd.toISOString(), timeZone }, colorId: reviewConfig.colorId, reminders: reminders });
-                });
-            }
-        }
-
-        async function getExistingEvents(startDate, endDate) {
-            try {
-                const response = await gapi.client.calendar.events.list({
-                    calendarId: 'primary', timeMin: (new Date(startDate + 'T00:00:00Z')).toISOString(),
-                    timeMax: new Date(endDate + 'T23:59:59Z').toISOString(), showDeleted: false, singleEvents: true,
-                });
-                return response.result.items || [];
-            } catch (err) {
-                console.error("Erro ao buscar eventos existentes:", err);
-                document.getElementById('status-message').textContent = 'Erro ao ler eventos da agenda. Verifique a consola para detalhes.';
-                return [];
-            }
-        }
-
-        // --- Funções de Modal e UI ---
-        // (showPreviewModal, closePreviewModal, addEventsToCalendar, clearOldEvents, fetchPendingReviews, etc. - Sem alterações)
-
-        // --- Modal e Adição/Remoção de Eventos ---
-        function showPreviewModal() {
-            const modal = document.getElementById('preview-modal');
-            const modalContent = document.getElementById('preview-content');
-            document.getElementById('event-count').textContent = `${generatedEvents.length} eventos serão criados.`;
-            generatedEvents.sort((a, b) => new Date(a.start.dateTime) - new Date(b.start.dateTime));
-            const eventsByDate = generatedEvents.reduce((acc, event) => {
-                const date = new Date(event.start.dateTime).toLocaleDateString('pt-PT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                if (!acc[date]) acc[date] = [];
-                acc[date].push(event); return acc;
-            }, {});
-            modalContent.innerHTML = Object.keys(eventsByDate).map(date => {
-                const eventsHtml = eventsByDate[date].map(event => {
-                    const startTime = new Date(event.start.dateTime).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-                    const color = googleCalendarColors.find(c => c.id === event.colorId)?.hex || '#ccc';
-                    return `
-                    <div class="flex items-center p-2 border-t border-gray-200">
-                        <span class="w-3 h-3 rounded-full mr-3 flex-shrink-0" style="background-color: ${color}"></span>
-                        <div class="flex-grow"><p class="font-semibold">${event.summary}</p><p class="text-sm text-gray-500">${startTime}</p></div>
-                    </div>`;
-                }).join('');
-                return `<div class="mb-4"><h3 class="font-bold text-lg bg-gray-100 p-2 rounded-md">${date}</h3>${eventsHtml}</div>`;
-            }).join('');
-            modal.classList.remove('hidden'); document.body.classList.add('modal-active');
-        }
-
-        function closePreviewModal() {
-            document.getElementById('preview-modal').classList.add('hidden'); document.body.classList.remove('modal-active');
-            generatedEvents = [];
-        }
-        
-        async function addEventsToCalendar() {
-            const eventsToAdd = [...generatedEvents];
-            closePreviewModal();
-            if (eventsToAdd.length === 0) return;
-            const loader = document.getElementById('loader');
-            const statusMessage = document.getElementById('status-message');
-            loader.style.display = 'block';
-            statusMessage.className = 'mt-4 text-center text-sm font-medium';
-            let successCount = 0; let errorCount = 0;
-
-            for (let i = 0; i < eventsToAdd.length; i++) {
-                const event = eventsToAdd[i];
-                statusMessage.textContent = `A adicionar evento ${i + 1} de ${eventsToAdd.length}...`;
-                try {
-                    await gapi.client.calendar.events.insert({ 'calendarId': 'primary', 'resource': event });
-                    successCount++;
-                } catch (err) { errorCount++; console.error("Falha ao adicionar o evento:", event.summary, "Erro:", err); }
-            }
-            loader.style.display = 'none';
-            if (errorCount > 0) {
-                statusMessage.textContent = `${successCount} eventos adicionados, ${errorCount} falharam. Verifique a consola.`;
-                statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-500';
-            } else if (successCount > 0) {
-                statusMessage.textContent = `Cronograma com ${successCount} eventos adicionado com sucesso!`;
-                statusMessage.className = 'mt-4 text-center text-sm font-medium text-green-500';
-            } else {
-                statusMessage.textContent = 'Nenhum evento foi criado. Ocorreu um erro inesperado.';
-                statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-500';
-            }
-        }
-
-        async function clearOldEvents() {
-            const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
-            if (!startDate || !endDate) {
-                document.getElementById('status-message').textContent = 'Selecione um intervalo de datas para limpar.';
-                return;
-            }
-            if (confirm(`Tem a certeza que quer apagar TODOS os eventos de estudo (com os emojis 👨‍💻, 🏫, ✅) entre ${new Date(startDate + 'T00:00:00').toLocaleDateString('pt-PT')} e ${new Date(endDate + 'T00:00:00').toLocaleDateString('pt-PT')}? Esta ação não pode ser desfeita.`)) {
-                const loader = document.getElementById('loader');
-                const statusMessage = document.getElementById('status-message');
-                loader.style.display = 'block';
-                statusMessage.textContent = 'A procurar eventos para apagar...';
-                statusMessage.className = 'mt-4 text-center text-sm font-medium';
-
-                try {
-                    const allEvents = await getExistingEvents(startDate, endDate);
-                    const eventsToDelete = allEvents.filter(event => event.summary && (event.summary.startsWith('👨‍💻') || event.summary.startsWith('🏫') || event.summary.startsWith('✅')));
-                    if (eventsToDelete.length === 0) {
-                        statusMessage.textContent = 'Nenhum evento de estudo encontrado no período selecionado.';
-                        loader.style.display = 'none'; return;
-                    }
-                    let successCount = 0; let errorCount = 0;
-                    for (let i = 0; i < eventsToDelete.length; i++) {
-                        const event = eventsToDelete[i];
-                        statusMessage.textContent = `A apagar evento ${i + 1} de ${eventsToDelete.length}...`;
-                        try {
-                            await gapi.client.calendar.events.delete({ 'calendarId': 'primary', 'eventId': event.id });
-                            successCount++;
-                        } catch (err) { errorCount++; console.error("Falha ao apagar o evento:", event.summary, "Erro:", err); }
-                    }
-                    if (errorCount > 0) {
-                        statusMessage.textContent = `${successCount} eventos apagados, ${errorCount} falharam. Verifique a consola.`;
-                        statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-500';
-                    } else {
-                        statusMessage.textContent = `${successCount} eventos apagados com sucesso!`;
-                        statusMessage.className = 'mt-4 text-center text-sm font-medium text-green-500';
-                    }
-                } catch (err) {
-                    console.error("Erro ao procurar eventos para apagar:", err);
-                    statusMessage.textContent = 'Erro ao comunicar com a Google Agenda.';
-                    statusMessage.className = 'mt-4 text-center text-sm font-medium text-red-500';
-                } finally { loader.style.display = 'none'; }
-            }
-        }
-
-        // --- GESTÃO DE REVISÕES ---
-        async function fetchPendingReviews() {
-            const statusMessage = document.getElementById('status-message');
-            const listContainer = document.getElementById('pending-reviews-list');
-            listContainer.innerHTML = '<div class="loader mx-auto"></div>';
-            statusMessage.textContent = 'Buscando revisões na sua agenda...';
-            statusMessage.className = 'mb-4 text-center text-sm font-medium text-gray-600';
-
-            try {
-                const response = await gapi.client.calendar.events.list({
-                    'calendarId': 'primary',
-                    'timeMin': (new Date()).toISOString(),
-                    'q': '✅ Revisão:',
-                    'showDeleted': false,
-                    'singleEvents': true,
-                    'maxResults': 250, // Aumentado para buscar mais eventos futuros
-                    'orderBy': 'startTime'
-                });
-
-                pendingReviews = response.result.items;
-                filterAndRenderReviews(activeReviewFilter); // Aplica o filtro padrão
-                statusMessage.textContent = `Busca concluída. Mostrando revisões para os "${activeReviewFilter === 'week' ? 'Próximos 7 dias' : activeReviewFilter}".`;
-
-            } catch (err) {
-                console.error("Erro ao buscar revisões:", err);
-                statusMessage.textContent = 'Erro ao buscar revisões. Verifique a consola.';
-                statusMessage.className = 'mb-4 text-center text-sm font-medium text-red-500';
-                listContainer.innerHTML = '<p class="text-red-500 text-center">Não foi possível buscar as revisões.</p>';
-            }
-        }
-
-        function filterAndRenderReviews(filter) {
-            activeReviewFilter = filter;
-
-            // Atualiza o estilo dos botões de filtro
-            document.querySelectorAll('#review-filters button').forEach(btn => {
-                btn.classList.remove('!bg-purple-700', '!text-white');
-            });
-            document.getElementById(`filter-${filter}`).classList.add('!bg-purple-700', '!text-white');
-
-            const now = new Date();
-            const today_start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const tomorrow_start = new Date(today_start);
-            tomorrow_start.setDate(tomorrow_start.getDate() + 1);
-            const tomorrow_end = new Date(tomorrow_start);
-            tomorrow_end.setDate(tomorrow_end.getDate() + 1);
-            const next_week_end = new Date(today_start);
-            next_week_end.setDate(next_week_end.getDate() + 7);
-
-            let reviewsToRender = [];
-
-            if (filter === 'today') {
-                reviewsToRender = pendingReviews.filter(event => {
-                    const eventDate = new Date(event.start.dateTime || event.start.date);
-                    return eventDate >= today_start && eventDate < tomorrow_start;
-                });
-            } else if (filter === 'tomorrow') {
-                reviewsToRender = pendingReviews.filter(event => {
-                    const eventDate = new Date(event.start.dateTime || event.start.date);
-                    return eventDate >= tomorrow_start && eventDate < tomorrow_end;
-                });
-            } else if (filter === 'week') {
-                reviewsToRender = pendingReviews.filter(event => {
-                    const eventDate = new Date(event.start.dateTime || event.start.date);
-                    return eventDate >= today_start && eventDate < next_week_end;
-                });
-            } else { // 'all'
-                reviewsToRender = pendingReviews;
-            }
-            
-            renderPendingReviews(reviewsToRender);
-        }
-
-        function renderPendingReviews(reviewsToRender) {
-            const listContainer = document.getElementById('pending-reviews-list');
-            if (!reviewsToRender || reviewsToRender.length === 0) {
-                listContainer.innerHTML = '<p class="text-center text-gray-500 mt-4">Nenhuma revisão encontrada para este período.</p>';
-                return;
-            }
-
-            listContainer.innerHTML = reviewsToRender.map(event => {
-                const eventDate = new Date(event.start.dateTime || event.start.date);
-                const formattedDate = eventDate.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
-                const formattedTime = eventDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                
-                return `
-                <div id="review-${event.id}" class="flex justify-between items-center bg-white/70 p-3 rounded-lg">
-                    <div>
-                        <p class="font-semibold">${event.summary.replace('✅ Revisão:', '').trim()}</p>
-                        <p class="text-sm text-gray-600">${formattedDate} às ${formattedTime}</p>
-                    </div>
-                    <button onclick="completeReview('${event.id}')" class="custom-button !bg-green-300 hover:!bg-green-400 !px-3 !py-1 text-sm">Concluir</button>
+            <!-- Coluna de Disciplinas -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl claymorphism">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Disciplinas</h2>
+                    <button id="addSubjectBtn" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay text-sm font-medium">Adicionar</button>
                 </div>
-                `;
-            }).join('');
-        }
+                <div id="subjectsList" class="space-y-2">
+                    <!-- Disciplinas serão inseridas aqui -->
+                    <p class="text-slate-500 text-center py-4">Nenhuma disciplina cadastrada.</p>
+                </div>
+            </div>
 
-        async function completeReview(eventId) {
-            if (!confirm('Tem certeza que deseja marcar esta revisão como concluída e removê-la da agenda?')) {
-                return;
-            }
+            <!-- Coluna de Assuntos e Desempenho -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Seção de Assuntos -->
+                <div id="topicsSection" class="bg-white p-6 rounded-2xl claymorphism hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Assuntos de <span id="selectedSubjectName" class="text-violet-600"></span></h2>
+                        <button id="addTopicBtn" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay text-sm font-medium">Adicionar</button>
+                    </div>
+                    <div id="topicsList" class="space-y-2">
+                         <!-- Assuntos serão inseridos aqui -->
+                         <p class="text-slate-500 text-center py-4">Selecione uma disciplina para ver os assuntos.</p>
+                    </div>
+                </div>
 
-            const statusMessage = document.getElementById('status-message');
-            statusMessage.textContent = 'Removendo revisão da agenda...';
-            
-            try {
-                await gapi.client.calendar.events.delete({
-                    'calendarId': 'primary',
-                    'eventId': eventId
-                });
-
-                statusMessage.textContent = 'Revisão concluída com sucesso!';
+                <!-- Seção de Desempenho -->
+                <div id="performanceSection" class="bg-white p-6 rounded-2xl claymorphism hidden">
+                    <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                        <h2 class="text-xl font-semibold">Desempenho em <span id="selectedTopicName" class="text-violet-600"></span></h2>
+                        <button id="addEntryBtn" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay text-sm font-medium">Adicionar Progresso</button>
+                    </div>
+                    <div class="mb-6">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold mb-2">Histórico de Registros</h3>
+                        <div id="entriesList" class="space-y-3">
+                            <!-- Registros de progresso serão inseridos aqui -->
+                             <p class="text-slate-500 text-center py-4">Nenhum registro de progresso para este assunto.</p>
+                        </div>
+                    </div>
+                </div>
                 
-                // Remove da lista principal e re-renderiza a lista filtrada
-                pendingReviews = pendingReviews.filter(p => p.id !== eventId);
-                filterAndRenderReviews(activeReviewFilter);
+                <!-- Placeholder -->
+                <div id="welcomePlaceholder" class="bg-white p-10 rounded-2xl claymorphism text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                    <h3 class="mt-2 text-lg font-medium text-slate-800">Selecione uma disciplina para começar</h3>
+                    <p class="mt-1 text-sm text-slate-500">Ou adicione uma nova para organizar seus estudos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            } catch (err) {
-                console.error('Erro ao deletar evento:', err);
-                statusMessage.textContent = 'Erro ao remover revisão. Tente novamente.';
-                 // Se o evento já foi deletado por outra aba, por exemplo, o erro 410 (Gone) pode acontecer.
-                // Nesse caso, removemos da lista localmente para sincronizar a UI.
-                if (err.result && err.result.error && err.result.error.code === 410) {
-                    pendingReviews = pendingReviews.filter(p => p.id !== eventId);
-                    filterAndRenderReviews(activeReviewFilter);
-                }
-            }
-        }
+    <!-- Modal Adicionar Disciplina -->
+    <div id="subjectModal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden">
+        <div class="bg-violet-50 p-8 rounded-2xl claymorphism w-full max-w-md m-4">
+            <h3 class="text-2xl font-semibold mb-6">Nova Disciplina</h3>
+            <form id="subjectForm">
+                <label for="subjectName" class="block text-sm font-medium text-slate-700">Nome da Disciplina</label>
+                <input type="text" id="subjectName" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" required>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelSubject" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 btn-clay font-medium">Cancelar</button>
+                    <button type="submit" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay font-medium">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar Assunto -->
+    <div id="topicModal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden">
+        <div class="bg-violet-50 p-8 rounded-2xl claymorphism w-full max-w-md m-4">
+            <h3 class="text-2xl font-semibold mb-6">Novo Assunto</h3>
+            <form id="topicForm">
+                <label for="topicName" class="block text-sm font-medium text-slate-700">Nome do Assunto</label>
+                <input type="text" id="topicName" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" required>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelTopic" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 btn-clay font-medium">Cancelar</button>
+                    <button type="submit" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay font-medium">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar Progresso -->
+    <div id="entryModal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden">
+        <div class="bg-violet-50 p-8 rounded-2xl claymorphism w-full max-w-md m-4">
+            <h3 class="text-2xl font-semibold mb-6">Registrar Progresso</h3>
+            <form id="entryForm">
+                <div class="space-y-4">
+                    <div>
+                        <label for="entryDate" class="block text-sm font-medium text-slate-700">Data</label>
+                        <input type="date" id="entryDate" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="entryCorrect" class="block text-sm font-medium text-slate-700">Acertos</label>
+                            <input type="number" id="entryCorrect" min="0" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" required>
+                        </div>
+                        <div>
+                            <label for="entryIncorrect" class="block text-sm font-medium text-slate-700">Erros</label>
+                            <input type="number" id="entryIncorrect" min="0" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" required>
+                        </div>
+                    </div>
+                     <div>
+                        <label for="entryNotes" class="block text-sm font-medium text-slate-700">Anotações (Opcional)</label>
+                        <textarea id="entryNotes" rows="3" class="mt-1 block w-full px-4 py-2 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 input-clay" placeholder="Ex: Fiz 20 exercícios, errei as questões de logaritmo."></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelEntry" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-300 btn-clay font-medium">Cancelar</button>
+                    <button type="submit" class="bg-violet-500 text-white px-4 py-2 rounded-lg hover:bg-violet-600 btn-clay font-medium">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="confirmModal" class="fixed inset-0 modal-backdrop flex items-center justify-center hidden">
+        <div class="bg-violet-50 p-8 rounded-2xl claymorphism w-full max-w-sm m-4 text-center">
+            <h3 id="confirmTitle" class="text-xl font-semibold mb-4">Confirmar Exclusão</h3>
+            <p id="confirmMessage" class="text-slate-600 mb-6">Você tem certeza?</p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirmCancel" class="bg-slate-200 text-slate-700 px-6 py-2 rounded-lg hover:bg-slate-300 btn-clay font-medium">Cancelar</button>
+                <button id="confirmDelete" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 btn-clay font-medium">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
         
-        // --- Inicialização da Aplicação ---
-        window.onload = function() {
-            const apiKeyPlaceholder = 'SUA_API_KEY_AQUI';
-            const clientIdPlaceholder = 'SEU_CLIENT_ID_AQUI.apps.googleusercontent.com';
-            let needsConfig = false;
-            let errorMsg = 'Para usar esta aplicação, precisa de configurar as suas próprias credenciais da API da Google. Por favor, edite o ficheiro HTML e substitua os seguintes valores no topo do script:<br>';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, addDoc, getDocs, onSnapshot, deleteDoc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-            if (API_KEY === apiKeyPlaceholder || API_KEY.trim() === '') {
-                needsConfig = true;
-                errorMsg += '- <strong>API_KEY</strong><br>';
-            }
-            if (CLIENT_ID === clientIdPlaceholder || CLIENT_ID.trim() === '') {
-                needsConfig = true;
-                errorMsg += '- <strong>CLIENT_ID</strong>';
-            }
+        // --- Variáveis Globais e Configuração do Firebase ---
+        const firebaseConfig = {
+  apiKey: "AIzaSyB9eCE4KTnVzxAFVavTUQux28yv7yVKzT0",
+  authDomain: "gordinnn-dfa7e.firebaseapp.com",
+  projectId: "gordinnn-dfa7e",
+  storageBucket: "gordinnn-dfa7e.firebasestorage.app",
+  messagingSenderId: "788602864459",
+  appId: "1:788602864459:web:32b534a3459d08419ddece",
+  measurementId: "G-1S5ZQFQZT3"
+};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-            if (needsConfig) {
-                const instructionsDiv = document.getElementById('api-instructions');
-                instructionsDiv.querySelector('p').innerHTML = errorMsg;
-                instructionsDiv.style.display = 'block';
-                document.getElementById('app-container').style.display = 'none';
-                return;
-            }
-            
-            document.getElementById('authorize_button').onclick = handleAuthClick;
-            document.getElementById('signout_button').onclick = handleSignoutClick;
-            document.getElementById('generate_schedule_button').onclick = generateAndPreviewSchedule;
-            document.getElementById('clear_events_button').onclick = clearOldEvents;
-            document.getElementById('study-type-select').onchange = handleStudyTypeChange;
-            document.getElementById('fetch-reviews-button').onclick = fetchPendingReviews;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
-            const enterAddsSubject = (e) => {
-                if(e.key === 'Enter') {
-                    e.preventDefault();
-                    addSubject();
-                }
-            };
-            document.getElementById('subject-input').addEventListener('keypress', enterAddsSubject);
-            document.getElementById('topic-input').addEventListener('keypress', enterAddsSubject);
-            document.getElementById('subject-duration-auto').addEventListener('keypress', enterAddsSubject);
-
-            document.getElementById('confirm-add-button').onclick = addEventsToCalendar;
-            document.getElementById('cancel-add-button').onclick = closePreviewModal;
-            
-            const colorOptions = googleCalendarColors.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            document.getElementById('color-select').innerHTML = colorOptions;
-            document.getElementById('review-color-select-auto').innerHTML = colorOptions;
-            document.getElementById('review-color-select-cursinho').innerHTML = colorOptions;
-            document.getElementById('review-color-select-auto').value = '8';
-            document.getElementById('review-color-select-cursinho').value = '8';
-
-            renderWeekdays('autodidata');
-            renderWeekdays('cursinho');
-            loadSubjects();
-            loadStudyHistory();
-            loadStudyIndex();
-            loadCycleSubjects(); // Carrega o ciclo salvo
-            handleStudyTypeChange();
+        let userId = null;
+        let currentSubjectId = null;
+        let currentTopicId = null;
+        let performanceChart = null;
+        
+        // --- Gerenciamento de Estado da UI ---
+        const ui = {
+            subjectsList: document.getElementById('subjectsList'),
+            topicsList: document.getElementById('topicsList'),
+            entriesList: document.getElementById('entriesList'),
+            topicsSection: document.getElementById('topicsSection'),
+            performanceSection: document.getElementById('performanceSection'),
+            welcomePlaceholder: document.getElementById('welcomePlaceholder'),
+            selectedSubjectName: document.getElementById('selectedSubjectName'),
+            selectedTopicName: document.getElementById('selectedTopicName'),
+            analysisResult: document.getElementById('analysisResult'),
+            // Modals
+            subjectModal: document.getElementById('subjectModal'),
+            topicModal: document.getElementById('topicModal'),
+            entryModal: document.getElementById('entryModal'),
+            confirmModal: document.getElementById('confirmModal'),
+            // Forms
+            subjectForm: document.getElementById('subjectForm'),
+            topicForm: document.getElementById('topicForm'),
+            entryForm: document.getElementById('entryForm'),
         };
 
-        function renderWeekdays(type) {
-            const container = document.getElementById(`weekdays-${type}`);
-            container.innerHTML = weekdays.map(day => `
-                <div class="flex items-center">
-                    <input id="day-${type}-${day.value}" type="checkbox" value="${day.value}" class="h-4 w-4 text-purple-600 rounded focus:ring-purple-500">
-                    <label for="day-${type}-${day.value}" class="ml-2 text-sm">${day.name}</label>
-                </div>`).join('');
+        const buttons = {
+            addSubjectBtn: document.getElementById('addSubjectBtn'),
+            addTopicBtn: document.getElementById('addTopicBtn'),
+            addEntryBtn: document.getElementById('addEntryBtn'),
+            cancelSubject: document.getElementById('cancelSubject'),
+            cancelTopic: document.getElementById('cancelTopic'),
+            cancelEntry: document.getElementById('cancelEntry'),
+            confirmCancel: document.getElementById('confirmCancel'),
+            confirmDelete: document.getElementById('confirmDelete'),
+            analyzeBtn: document.getElementById('analyzeBtn'),
+        };
+
+        // --- Autenticação ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                loadSubjects();
+            } else {
+                 try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Authentication Error:", error);
+                }
+            }
+        });
+        
+        // --- Funções de Renderização ---
+
+        function loadSubjects() {
+            if (!userId) return;
+            const subjectsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects');
+            
+            onSnapshot(query(subjectsCollection), (snapshot) => {
+                if (snapshot.empty) {
+                    ui.subjectsList.innerHTML = `<p class="text-slate-500 text-center py-4">Nenhuma disciplina cadastrada.</p>`;
+                    return;
+                }
+                
+                ui.subjectsList.innerHTML = '';
+                snapshot.docs.sort((a,b) => a.data().name.localeCompare(b.data().name)).forEach(doc => {
+                    const subject = { id: doc.id, ...doc.data() };
+                    const subjectEl = createListItem(subject.name, subject.id, 'subject');
+                    ui.subjectsList.appendChild(subjectEl);
+                });
+            });
         }
 
-        function handleGapiError(err) {
-            console.error("Erro GAPI:", err);
-            document.getElementById('status-message').textContent = `Erro: ${err.result?.error?.message || 'Verifique a sua API_KEY.'}`;
+        function loadTopics(subjectId, subjectName) {
+            currentSubjectId = subjectId;
+            ui.selectedSubjectName.textContent = subjectName;
+            ui.topicsSection.classList.remove('hidden');
+            ui.welcomePlaceholder.classList.add('hidden');
+            ui.performanceSection.classList.add('hidden');
+            currentTopicId = null;
+
+            document.querySelectorAll('[data-type="subject"]').forEach(el => {
+                el.classList.toggle('bg-violet-100', el.dataset.id === subjectId);
+                el.classList.toggle('text-violet-700', el.dataset.id === subjectId);
+            });
+
+
+            const topicsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', subjectId, 'topics');
+            
+            onSnapshot(query(topicsCollection), (snapshot) => {
+                if (snapshot.empty) {
+                    ui.topicsList.innerHTML = `<p class="text-slate-500 text-center py-4">Nenhum assunto cadastrado.</p>`;
+                    return;
+                }
+                
+                ui.topicsList.innerHTML = '';
+                snapshot.docs.sort((a,b) => a.data().name.localeCompare(b.data().name)).forEach(doc => {
+                    const topic = { id: doc.id, ...doc.data() };
+                    const topicEl = createListItem(topic.name, topic.id, 'topic');
+                    topicEl.dataset.subjectId = subjectId;
+                    ui.topicsList.appendChild(topicEl);
+                });
+
+                if(currentTopicId) {
+                     document.querySelectorAll('[data-type="topic"]').forEach(el => {
+                        el.classList.toggle('bg-violet-100', el.dataset.id === currentTopicId);
+                        el.classList.toggle('text-violet-800', el.dataset.id === currentTopicId);
+                     });
+                }
+            });
         }
-        function handleGisError(err) {
-            console.error("Erro GIS:", err);
-            document.getElementById('status-message').textContent = `Erro de configuração: ${err.details || 'Verifique o seu CLIENT_ID.'}`;
+        
+        function loadEntries(subjectId, topicId, topicName) {
+            currentTopicId = topicId;
+            ui.selectedTopicName.textContent = topicName;
+            ui.performanceSection.classList.remove('hidden');
+
+            document.querySelectorAll('[data-type="topic"]').forEach(el => {
+                el.classList.toggle('bg-violet-100', el.dataset.id === topicId);
+                el.classList.toggle('text-violet-800', el.dataset.id === topicId);
+            });
+
+            const entriesCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', subjectId, 'topics', topicId, 'entries');
+            
+            onSnapshot(query(entriesCollection), (snapshot) => {
+                if (snapshot.empty) {
+                    ui.entriesList.innerHTML = `<p class="text-slate-500 text-center py-4">Nenhum registro de progresso para este assunto.</p>`;
+                    if (performanceChart) {
+                        performanceChart.destroy();
+                        performanceChart = null;
+                    }
+                    return;
+                }
+                
+                ui.entriesList.innerHTML = '';
+                const entries = [];
+                snapshot.forEach(doc => entries.push({ id: doc.id, ...doc.data() }));
+                
+                entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                entries.forEach(entry => {
+                    const entryEl = document.createElement('div');
+                    entryEl.className = 'p-4 bg-white rounded-lg border-2 border-black flex justify-between items-start';
+                    entryEl.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-slate-800">${new Date(entry.date).toLocaleDateString('pt-BR', {timeZone: 'UTC'})} - <span class="text-violet-600">Aproveitamento: ${entry.score.toFixed(1)}%</span></p>
+                            <p class="text-sm text-slate-500">Acertos: <span class="font-medium text-green-600">${entry.correct}</span> | Erros: <span class="font-medium text-red-600">${entry.incorrect}</span></p>
+                            <p class="text-sm text-slate-600 mt-1">${entry.notes || 'Nenhuma anotação.'}</p>
+                        </div>
+                        <button data-id="${entry.id}" data-type="entry" class="delete-btn text-slate-400 hover:text-red-600 p-1 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                        </button>
+                    `;
+                    entryEl.querySelector('.delete-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        confirmDeletion('entry', entry.id, {subjectId, topicId});
+                    });
+                    ui.entriesList.appendChild(entryEl);
+                });
+                renderChart(entries);
+            });
+        }
+        
+        function renderChart(entries) {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            const labels = entries.map(e => new Date(e.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+            const data = entries.map(e => e.score);
+
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Aproveitamento (%)',
+                        data: data,
+                        borderColor: 'rgb(139, 92, 246)',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: 'rgb(139, 92, 246)',
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                             ticks: {
+                                callback: function(value) {
+                                    return value + '%'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Aproveitamento: ${context.parsed.y.toFixed(1)}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createListItem(name, id, type) {
+            const itemEl = document.createElement('div');
+            itemEl.className = 'flex justify-between items-center p-3 rounded-lg cursor-pointer hover:bg-violet-100 transition-colors';
+            itemEl.dataset.id = id;
+            itemEl.dataset.name = name;
+            itemEl.dataset.type = type;
+            itemEl.innerHTML = `
+                <span class="font-medium">${name}</span>
+                <button class="delete-btn text-slate-400 hover:text-red-600 p-1 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                </button>
+            `;
+            
+            itemEl.querySelector('.delete-btn').addEventListener('click', (e) => {
+                 e.stopPropagation();
+                 confirmDeletion(type, id, { subjectId: itemEl.dataset.subjectId });
+            });
+
+            itemEl.addEventListener('click', () => {
+                if (type === 'subject') loadTopics(id, name);
+                else if (type === 'topic') loadEntries(itemEl.dataset.subjectId, id, name);
+            });
+
+            return itemEl;
+        }
+
+        function toggleModal(modal, show) {
+            if (show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+        
+        // --- Handlers de Eventos ---
+
+        buttons.addSubjectBtn.onclick = () => { ui.subjectForm.reset(); toggleModal(ui.subjectModal, true); };
+        buttons.cancelSubject.onclick = () => toggleModal(ui.subjectModal, false);
+        buttons.addTopicBtn.onclick = () => { ui.topicForm.reset(); toggleModal(ui.topicModal, true); };
+        buttons.cancelTopic.onclick = () => toggleModal(ui.topicModal, false);
+        buttons.addEntryBtn.onclick = () => {
+            ui.entryForm.reset();
+            document.getElementById('entryDate').valueAsDate = new Date();
+            toggleModal(ui.entryModal, true);
+        };
+        buttons.cancelEntry.onclick = () => toggleModal(ui.entryModal, false);
+
+        ui.subjectForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const subjectName = document.getElementById('subjectName').value.trim();
+            if (!subjectName || !userId) return;
+            const subjectsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects');
+            await addDoc(subjectsCollection, { name: subjectName, createdAt: serverTimestamp() });
+            toggleModal(ui.subjectModal, false);
+        };
+        
+        ui.topicForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const topicName = document.getElementById('topicName').value.trim();
+            if (!topicName || !currentSubjectId || !userId) return;
+            const topicsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', currentSubjectId, 'topics');
+            await addDoc(topicsCollection, { name: topicName, createdAt: serverTimestamp() });
+            toggleModal(ui.topicModal, false);
+        };
+
+        ui.entryForm.onsubmit = async (e) => {
+            e.preventDefault();
+            if (!currentSubjectId || !currentTopicId || !userId) return;
+            
+            const correct = parseInt(document.getElementById('entryCorrect').value);
+            const incorrect = parseInt(document.getElementById('entryIncorrect').value);
+
+            if (isNaN(correct) || isNaN(incorrect)) return;
+            const total = correct + incorrect;
+            const score = total > 0 ? (correct / total) * 100 : 0;
+            
+            const entry = {
+                date: document.getElementById('entryDate').value,
+                correct: correct,
+                incorrect: incorrect,
+                score: score,
+                notes: document.getElementById('entryNotes').value.trim(),
+                createdAt: serverTimestamp()
+            };
+            
+            const entriesCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', currentSubjectId, 'topics', currentTopicId, 'entries');
+            await addDoc(entriesCollection, entry);
+            toggleModal(ui.entryModal, false);
+        };
+        
+        // --- Lógica de Análise e Exclusão ---
+        buttons.analyzeBtn.onclick = analyzePerformance;
+
+        async function analyzePerformance() {
+            if (!userId) return;
+
+            ui.analysisResult.innerHTML = `<p class="text-slate-500 text-center py-2">Analisando dados...</p>`;
+            buttons.analyzeBtn.disabled = true;
+
+            const subjectPerformances = [];
+
+            try {
+                const subjectsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects');
+                const subjectsSnapshot = await getDocs(subjectsCollection);
+
+                for (const subjectDoc of subjectsSnapshot.docs) {
+                    const subjectData = { id: subjectDoc.id, name: subjectDoc.data().name, totalScore: 0, entryCount: 0, topics: [] };
+                    const topicsCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', subjectDoc.id, 'topics');
+                    const topicsSnapshot = await getDocs(topicsCollection);
+
+                    for (const topicDoc of topicsSnapshot.docs) {
+                        const topicData = { id: topicDoc.id, name: topicDoc.data().name, totalScore: 0, entryCount: 0 };
+                        const entriesCollection = collection(db, 'artifacts', appId, 'users', userId, 'subjects', subjectDoc.id, 'topics', topicDoc.id, 'entries');
+                        const entriesSnapshot = await getDocs(entriesCollection);
+                        
+                        entriesSnapshot.forEach(entryDoc => {
+                            const score = entryDoc.data().score || 0;
+                            topicData.totalScore += score;
+                            topicData.entryCount++;
+                            subjectData.totalScore += score;
+                            subjectData.entryCount++;
+                        });
+
+                        if (topicData.entryCount > 0) {
+                            topicData.average = topicData.totalScore / topicData.entryCount;
+                            subjectData.topics.push(topicData);
+                        }
+                    }
+
+                    if (subjectData.entryCount > 0) {
+                        subjectData.average = subjectData.totalScore / subjectData.entryCount;
+                        subjectPerformances.push(subjectData);
+                    }
+                }
+                renderAnalysis(subjectPerformances);
+            } catch (error) {
+                console.error("Error analyzing performance:", error);
+                ui.analysisResult.innerHTML = `<p class="text-red-500 text-center py-2">Ocorreu um erro ao analisar os dados.</p>`;
+            } finally {
+                buttons.analyzeBtn.disabled = false;
+            }
+        }
+
+        function renderAnalysis(performanceData) {
+            if (performanceData.length === 0) {
+                ui.analysisResult.innerHTML = `<p class="text-slate-500 text-center py-2">Não há dados suficientes para uma análise. Adicione alguns registros de progresso primeiro.</p>`;
+                return;
+            }
+
+            performanceData.sort((a, b) => a.average - b.average);
+            ui.analysisResult.innerHTML = `<h3 class="font-semibold text-slate-800 mb-2">Matérias para Focar (Pior Desempenho Primeiro):</h3>`;
+            const list = document.createElement('ul');
+            list.className = 'space-y-2';
+
+            performanceData.forEach(subject => {
+                const avg = subject.average;
+                const colorClass = avg < 50 ? 'text-red-600' : avg < 75 ? 'text-yellow-600' : 'text-green-600';
+                const subjectItem = document.createElement('li');
+                subjectItem.className = 'p-3 bg-violet-50 rounded-lg border-2 border-black';
+                subjectItem.innerHTML = `<div class="flex justify-between items-center"><span class="font-bold">${subject.name}</span><span class="font-semibold ${colorClass}">Média: ${avg.toFixed(1)}%</span></div>`;
+                
+                subject.topics.sort((a,b) => a.average - b.average);
+                if (subject.topics.length > 0) {
+                    const topicsList = document.createElement('ul');
+                    topicsList.className = 'mt-2 pl-4 border-l-2 border-slate-400 space-y-1';
+                    subject.topics.forEach(topic => {
+                        const topicAvg = topic.average;
+                        const topicColorClass = topicAvg < 50 ? 'text-red-500' : topicAvg < 75 ? 'text-yellow-500' : 'text-green-500';
+                        const topicItem = document.createElement('li');
+                        topicItem.className = 'text-sm flex justify-between items-center';
+                        topicItem.innerHTML = `<span class="text-slate-600">${topic.name}</span><span class="font-medium ${topicColorClass}">${topicAvg.toFixed(1)}%</span>`;
+                        topicsList.appendChild(topicItem);
+                    });
+                    subjectItem.appendChild(topicsList);
+                }
+                list.appendChild(subjectItem);
+            });
+            ui.analysisResult.appendChild(list);
+        }
+        
+        function confirmDeletion(type, id, context = {}) {
+            const title = document.getElementById('confirmTitle');
+            const message = document.getElementById('confirmMessage');
+            
+            if (type === 'subject') {
+                title.textContent = 'Excluir Disciplina?';
+                message.textContent = 'Isso excluirá todos os assuntos e registros de progresso associados. Esta ação não pode ser desfeita.';
+            } else if (type === 'topic') {
+                title.textContent = 'Excluir Assunto?';
+                message.textContent = 'Isso excluirá todos os registros de progresso associados. Esta ação não pode ser desfeita.';
+            } else {
+                title.textContent = 'Excluir Registro?';
+                message.textContent = 'Tem certeza que deseja excluir este registro de progresso?';
+            }
+
+            toggleModal(ui.confirmModal, true);
+
+            buttons.confirmCancel.onclick = () => toggleModal(ui.confirmModal, false);
+
+            buttons.confirmDelete.onclick = () => {
+                deleteItem(type, id, context);
+                toggleModal(ui.confirmModal, false);
+            };
+        }
+        
+        async function deleteItem(type, id, context) {
+            if (!userId) return;
+            try {
+                if (type === 'subject') {
+                    const subjectRef = doc(db, 'artifacts', appId, 'users', userId, 'subjects', id);
+                    const topicsSnapshot = await getDocs(collection(subjectRef, 'topics'));
+                    for (const topicDoc of topicsSnapshot.docs) {
+                        const entriesSnapshot = await getDocs(collection(topicDoc.ref, 'entries'));
+                        for (const entryDoc of entriesSnapshot.docs) {
+                           await deleteDoc(entryDoc.ref);
+                        }
+                        await deleteDoc(topicDoc.ref);
+                    }
+                    await deleteDoc(subjectRef);
+                    if (currentSubjectId === id) {
+                        ui.topicsSection.classList.add('hidden');
+                        ui.performanceSection.classList.add('hidden');
+                        ui.welcomePlaceholder.classList.remove('hidden');
+                        currentSubjectId = null;
+                        currentTopicId = null;
+                    }
+
+                } else if (type === 'topic') {
+                    const topicRef = doc(db, 'artifacts', appId, 'users', userId, 'subjects', context.subjectId, 'topics', id);
+                    const entriesSnapshot = await getDocs(collection(topicRef, 'entries'));
+                    for (const entryDoc of entriesSnapshot.docs) {
+                        await deleteDoc(entryDoc.ref);
+                    }
+                    await deleteDoc(topicRef);
+                     if(currentTopicId === id) {
+                        ui.performanceSection.classList.add('hidden');
+                        currentTopicId = null;
+                     }
+
+                } else if (type === 'entry') {
+                    const entryRef = doc(db, 'artifacts', appId, 'users', userId, 'subjects', context.subjectId, 'topics', context.topicId, 'entries', id);
+                    await deleteDoc(entryRef);
+                }
+            } catch (error) {
+                console.error("Error deleting item:", error);
+            }
         }
     </script>
-</head>
-<body class="flex items-center justify-center min-h-screen p-4">
+    <a href="study-planner.html" style="display: block; text-align: left; font-size: 30px; text-decoration: none;" title="Voltar para o planejador de estudos">
+        &larr;
+    </a>
 
-    <div class="main-container max-w-4xl mx-auto p-8 space-y-8">
-        <div class="text-center title-container">
-            <div class="sparkle sparkle-tl"></div>
-            <h1>Planejador de Estudos</h1>
-            <p class="text-gray-600 mt-2">Organize a sua rotina de estudos e sincronize com a Google Agenda.</p>
-            <div class="sparkle sparkle-br"></div>
-        </div>
-
-        <div id="api-instructions" class="hidden p-4 retro-border bg-yellow-100 text-yellow-800">
-            <h3 class="font-bold">Configuração Necessária</h3>
-            <p>Para usar esta aplicação, precisa de configurar as suas próprias credenciais da API da Google. Por favor, edite o ficheiro HTML e substitua os valores de <strong>API_KEY</strong> e <strong>CLIENT_ID</strong> no topo do script.</p>
-        </div>
-
-        <div id="app-container" class="space-y-6">
-            <!-- Passo 1: Matérias -->
-            <div class="p-6 retro-border bg-white/50">
-                <h2 class="text-xl">Passo 1: Adicione Todas as Suas Matérias</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-                    <input type="text" id="subject-input" placeholder="Matéria (Ex: Matemática)">
-                    <input type="text" id="topic-input" placeholder="Tópico (Opcional)">
-                    <select id="study-type-select">
-                        <option value="Autodidata">Autodidata (para Ciclo)</option>
-                        <option value="Cursinho">Cursinho (para Horário Fixo)</option>
-                    </select>
-                    <select id="color-select"></select>
-                    <div id="autodidata-duration-container" class="w-full col-span-1 sm:col-span-2">
-                        <label for="subject-duration-auto" class="text-sm font-medium">Duração da Sessão (min)</label>
-                        <input type="number" id="subject-duration-auto" value="50" class="w-full">
-                    </div>
-                </div>
-                <button onclick="addSubject()" class="mt-4 w-full custom-button">Adicionar Matéria</button>
-                <div id="subjects-list" class="mt-4 space-y-2"></div>
-            </div>
-            
-            <!-- Gerenciador de Ciclo -->
-            <div class="p-6 retro-border bg-white/50">
-                <h2 class="text-xl">Monte seu Ciclo de Estudos</h2>
-                <p class="text-sm text-gray-600 mb-4">Arraste as matérias "Autodidata" da esquerda para a direita para adicioná-las ao seu ciclo. Ordene a lista da direita como desejar.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <h3 class="font-semibold text-center mb-2">Disciplinas Disponíveis</h3>
-                        <div id="cycle-available-list" class="cycle-box bg-gray-50"></div>
-                    </div>
-                    <div>
-                        <h3 class="font-semibold text-center mb-2">Disciplinas no Ciclo</h3>
-                        <div id="cycle-in-cycle-list" class="cycle-box bg-purple-50"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Passo 2: Configuração do Horário -->
-            <div class="p-6 retro-border bg-white/50">
-                <h2 class="text-xl">Passo 2: Defina as datas e horários</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div><label for="start-date" class="block text-sm font-medium">Data de Início</label><input type="date" id="start-date"></div>
-                    <div><label for="end-date" class="block text-sm font-medium">Data de Fim</label><input type="date" id="end-date"></div>
-                </div>
-
-                <div class="p-4 border-2 border-dashed border-gray-300 rounded-lg space-y-4">
-                    <div class="flex items-center"><input id="enable-autodidata" type="checkbox" checked class="h-5 w-5"><label for="enable-autodidata" class="ml-3 text-lg font-medium">👨‍💻 Estudo Autodidata (usará o Ciclo acima)</label></div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label for="start-time-auto" class="text-sm">Início do Bloco</label><input type="time" id="start-time-auto" value="14:00"></div>
-                        <div><label for="end-time-auto" class="text-sm">Fim do Bloco</label><input type="time" id="end-time-auto" value="18:00"></div>
-                    </div>
-                    <div class="flex items-center mt-2">
-                        <input id="schedule-once-auto" type="checkbox" class="h-4 w-4">
-                        <label for="schedule-once-auto" class="ml-2 text-sm">Agendar cada matéria do ciclo apenas uma vez</label>
-                    </div>
-                    <div><label class="text-sm font-medium">Dias da semana</label><div id="weekdays-autodidata" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2"></div></div>
-                </div>
-
-                <div class="p-4 border-2 border-dashed border-gray-300 rounded-lg space-y-4 mt-4">
-                    <div class="flex items-center"><input id="enable-cursinho" type="checkbox" checked class="h-5 w-5"><label for="enable-cursinho" class="ml-3 text-lg font-medium">🏫 Cursinho (usará matérias do tipo "Cursinho")</label></div>
-                    <div class="space-y-3 mt-2">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div><label for="start-time-cursinho1" class="text-sm">Início Matéria 1</label><input type="time" id="start-time-cursinho1" value="19:00"></div>
-                             <div><label for="end-time-cursinho1" class="text-sm">Fim Matéria 1</label><input type="time" id="end-time-cursinho1" value="20:30"></div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div><label for="start-time-cursinho2" class="text-sm">Início Matéria 2</label><input type="time" id="start-time-cursinho2" value="20:30"></div>
-                             <div><label for="end-time-cursinho2" class="text-sm">Fim Matéria 2</label><input type="time" id="end-time-cursinho2" value="22:00"></div>
-                        </div>
-                    </div>
-                    <div class="mt-4"><label class="text-sm font-medium">Dias da semana</label><div id="weekdays-cursinho" class="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2"></div></div>
-                </div>
-            </div>
-
-            <!-- Passo 3: Configurar Revisões -->
-            <div class="p-6 retro-border bg-white/50">
-                <h2 class="text-xl">Passo 3: Configure as Revisões</h2>
-                 <div class="p-4 border-2 border-dashed border-gray-300 rounded-lg space-y-4">
-                    <div class="flex items-center"><input id="enable-reviews-auto" type="checkbox" checked class="h-5 w-5"><label for="enable-reviews-auto" class="ml-3 text-lg font-medium">✅ Revisões para Autodidata</label></div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                        <div><label for="review-intervals-auto" class="text-sm">Revisar após (dias)</label><input type="text" id="review-intervals-auto" value="1, 7, 30"></div>
-                        <div><label for="review-duration-auto" class="text-sm">Duração (min)</label><input type="number" id="review-duration-auto" value="25"></div>
-                         <div><label for="review-color-select-auto" class="text-sm">Cor</label><select id="review-color-select-auto"></select></div>
-                    </div>
-                </div>
-                <div class="p-4 border-2 border-dashed border-gray-300 rounded-lg space-y-4 mt-4">
-                    <div class="flex items-center"><input id="enable-reviews-cursinho" type="checkbox" class="h-5 w-5"><label for="enable-reviews-cursinho" class="ml-3 text-lg font-medium">✅ Revisões para Cursinho</label></div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-                        <div><label for="review-intervals-cursinho" class="text-sm">Revisar após (dias)</label><input type="text" id="review-intervals-cursinho" value="1, 7"></div>
-                        <div><label for="review-duration-cursinho" class="text-sm">Duração (min)</label><input type="number" id="review-duration-cursinho" value="15"></div>
-                         <div><label for="review-color-select-cursinho" class="text-sm">Cor</label><select id="review-color-select-cursinho"></select></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Passo 4: Sincronização e Gestão -->
-            <div class="p-6 text-center">
-                <div id="loader" class="loader mx-auto mb-4 hidden"></div>
-                <div id="status-message" class="mb-4 text-center text-sm font-medium text-red-500"></div>
-                <div class="flex flex-col items-center gap-4">
-                    <button id="authorize_button" style="display: none;" class="w-full max-w-sm custom-button">Autorizar com Google</button>
-                    <div id="controls-wrapper" class="w-full flex flex-col sm:flex-row justify-center gap-4">
-                         <button id="generate_schedule_button" disabled class="w-full custom-button">1. Pré-visualizar Cronograma</button>
-                         <button id="clear_events_button" style="display: none;" class="w-full custom-button bg-red-400 hover:bg-red-500">2. Limpar Eventos</button>
-                    </div>
-                     <button id="signout_button" style="display: none;" class="text-sm text-gray-500 hover:underline">Sair</button>
-                </div>
-            </div>
-
-            <!-- Passo 5: Gerencie suas Revisões -->
-            <div class="p-6 retro-border bg-white/50">
-                <h2 class="text-xl">Passo 5: Gerencie suas Revisões</h2>
-                <p class="text-gray-600 mb-4">Filtre e visualize suas próximas revisões. Marque-as como concluídas para removê-las da sua agenda.</p>
-                <div id="review-filters" class="flex flex-wrap gap-2 mb-4">
-                    <button id="filter-today" onclick="filterAndRenderReviews('today')" class="custom-button !py-1 !px-3 text-sm">Hoje</button>
-                    <button id="filter-tomorrow" onclick="filterAndRenderReviews('tomorrow')" class="custom-button !py-1 !px-3 text-sm">Amanhã</button>
-                    <button id="filter-week" onclick="filterAndRenderReviews('week')" class="custom-button !py-1 !px-3 text-sm !bg-purple-700 !text-white">Próximos 7 dias</button>
-                    <button id="filter-all" onclick="filterAndRenderReviews('all')" class="custom-button !py-1 !px-3 text-sm">Todas</button>
-                </div>
-                <button id="fetch-reviews-button" disabled class="w-full custom-button">Buscar/Atualizar Revisões Pendentes</button>
-                <div id="pending-reviews-list" class="mt-4 space-y-2">
-                    <!-- A lista de revisões aparecerá aqui -->
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal de Pré-visualização -->
-    <div id="preview-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="modal-content w-full max-w-2xl max-h-[80vh] rounded-lg shadow-xl flex flex-col">
-            <div class="p-6 border-b-2 border-black"><h2 class="text-2xl font-bold">Pré-visualização do Cronograma</h2><p id="event-count" class="text-gray-600"></p></div>
-            <div id="preview-content" class="p-6 flex-grow overflow-y-auto"></div>
-            <div class="p-6 bg-gray-50/50 flex justify-end gap-4">
-                <button id="cancel-add-button" class="custom-button bg-gray-200 hover:bg-gray-300 text-black">Cancelar</button>
-                <button id="confirm-add-button" class="custom-button">Confirmar e Adicionar</button>
-            </div>
-        </div>
-    </div>
-
+</body>
+</html>
 </body>
 </html>
 
